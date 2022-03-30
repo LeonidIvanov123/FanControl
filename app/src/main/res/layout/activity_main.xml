@@ -14,13 +14,22 @@
         <TextView
                 android:text="TextView"
                 android:layout_width="match_parent"
-                android:layout_height="115dp" android:id="@+id/loggingview" android:maxLines="5"
-                android:onClick="connectToController"/>
-        <Button
-                android:text="Connect"
-                android:layout_width="117dp"
-                android:layout_height="wrap_content" android:id="@+id/buttonconnect"
-                android:onClick="connectToController"/>
+                android:layout_height="157dp" android:id="@+id/loggingview" android:maxLines="100"
+                android:onClick="connectToController"
+                android:scrollbars = "vertical"/>
+        <LinearLayout
+                android:orientation="horizontal"
+                android:layout_width="match_parent"
+                android:layout_height="135dp">
+            <Button
+                    android:text="Search dev"
+                    android:layout_width="117dp"
+                    android:layout_height="wrap_content" android:id="@+id/buttonconnect"
+                    android:onClick="connectToController"/>
+            <ListView
+                    android:layout_width="match_parent"
+                    android:layout_height="match_parent" android:id="@+id/listdevice"/>
+        </LinearLayout>
 
     </LinearLayout>
 </androidx.constraintlayout.widget.ConstraintLayout>
