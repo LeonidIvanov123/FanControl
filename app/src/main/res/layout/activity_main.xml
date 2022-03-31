@@ -11,12 +11,18 @@
             android:layout_width="match_parent"
             android:layout_height="match_parent">
 
-        <TextView
-                android:text="TextView"
-                android:layout_width="match_parent"
-                android:layout_height="157dp" android:id="@+id/loggingview" android:maxLines="100"
-                android:onClick="connectToController"
-                android:scrollbars = "vertical"/>
+        <ScrollView
+                android:id="@+id/SCROLLER_ID"
+                android:layout_width="fill_parent"
+                android:layout_height="151dp"
+                android:scrollbars="vertical"
+                android:fillViewport="true">
+            <TextView
+                    android:text="TextView"
+                    android:layout_width="fill_parent"
+                    android:layout_height="fill_parent" android:id="@+id/loggingview"
+                    android:layout_weight="1.0"/>
+        </ScrollView>
         <LinearLayout
                 android:orientation="horizontal"
                 android:layout_width="match_parent"
@@ -29,6 +35,44 @@
             <ListView
                     android:layout_width="match_parent"
                     android:layout_height="match_parent" android:id="@+id/listdevice"/>
+        </LinearLayout>
+        <LinearLayout
+                android:orientation="horizontal"
+                android:layout_width="match_parent"
+                android:layout_height="24dp">
+            <TextView
+                    android:text="Data display"
+                    android:layout_width="211dp"
+                    android:layout_height="wrap_content" android:id="@+id/textView2" android:layout_weight="1"
+                    android:textAppearance="@style/TextAppearance.AppCompat.Medium"/>
+            <TextView
+                    android:text="Button control"
+                    android:layout_width="187dp"
+                    android:layout_height="wrap_content" android:id="@+id/textView"
+                    android:textAppearance="@style/TextAppearance.AppCompat.Medium"/>
+        </LinearLayout>
+        <LinearLayout
+                android:orientation="horizontal"
+                android:layout_width="match_parent"
+                android:layout_height="match_parent">
+            <ScrollView
+                    android:id="@+id/SCROLLER_ID1"
+                    android:layout_width="226dp"
+                    android:layout_height="match_parent"
+                    android:scrollbars="vertical"
+                    android:fillViewport="true">
+                <TextView
+                        android:text="Input data from Fan controller"
+                        android:layout_width="fill_parent"
+                        android:layout_height="fill_parent"
+                        android:id="@+id/textfromfancontrol"
+                        android:layout_weight="1"/>
+            </ScrollView>
+            <Button
+                    android:text="Start Fan"
+                    android:layout_width="wrap_content"
+                    android:layout_height="wrap_content" android:id="@+id/button" android:layout_weight="1"
+                    android:onClick="sendToStartFan"/>
         </LinearLayout>
 
     </LinearLayout>
