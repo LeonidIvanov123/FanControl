@@ -5,7 +5,9 @@ import android.bluetooth.*;
 import android.content.Context;
 import android.content.Intent;
 import android.content.pm.PackageManager;
+import android.os.Handler;
 import android.text.method.ScrollingMovementMethod;
+import android.util.Log;
 import android.view.LayoutInflater;
 import android.view.View;
 import android.widget.*;
@@ -15,6 +17,7 @@ import android.os.Bundle;
 import java.io.IOException;
 import java.io.InputStream;
 import java.io.OutputStream;
+import java.lang.reflect.InvocationTargetException;
 import java.util.ArrayList;
 import java.util.List;
 import java.util.Set;
@@ -25,20 +28,18 @@ public class MainActivity extends AppCompatActivity {
     Button bconnect;
     TextView logview, inputtext;
     ListView listDevice;
-    BluetoothDevice controller;
     BluetoothManager btManager;
-    boolean stateconnection = false;
     BluetoothAdapter btAdapter;
-    String addressBTController = "00:00:00:00";
-    Thread myThreadConnectBTdevice;
     Thread myThreadIOdata;
-    private UUID myUUID;
-    private StringBuilder sb = new StringBuilder();
+    UUID myUUID = UUID.fromString("00001101-0000-1000-8000-00805F9B34FB");
+    StringBuilder sb = new StringBuilder();
+    Handler inputMSGhandler;
 
     Set<BluetoothDevice> paredDev;
-    ArrayList pairedDeviceArrayList;
-    ArrayAdapter< String> pairedDeviceAdapter;
+    ArrayList<String> pairedDeviceArrayList;
+    ArrayAdapter<String> pairedDeviceAdapter;
 
+    @SuppressLint("HandlerLeak")
     @Override
     protected void onCreate(Bundle savedInstanceState) {
         super.onCreate(savedInstanceState);
@@ -56,33 +57,37 @@ public class MainActivity extends AppCompatActivity {
 
         btManager = (BluetoothManager) getSystemService(Context.BLUETOOTH_SERVICE);
         btAdapter = btManager.getAdapter();
-        myUUID = UUID.fromString("00001101-0000-1000-8000-00805F9B34FB");
-        //System.out.println(btAdapter);
+        //myUUID = UUID.fromString("00001101-0000-1000-8000-00805F9B34FB");
         if (btAdapter == null) {
             Toast.makeText(this, "Bluetooth is not supported on this hardware platform", Toast.LENGTH_LONG).show();
             finish();
             return;
         }
         String stInfo = btAdapter.getName() + " = " + btAdapter.getAddress() + "State bt module = " + btAdapter.getState();
-        logview.setText(String.format("Это устройство: %s", stInfo));
+        logview.setText(String.format("Это устройство:\n %s", stInfo));
+
+        inputMSGhandler = new Handler(){
+            public void handleMessage(android.os.Message msg) {
+                inputtext.setText(inputtext.getText() + "\n" + msg.obj.toString());
+            }
+        };
+
     }
 
     @Override
     protected void onStart() {
         super.onStart();
-        logview.setText((String) logview.getText() + "\n Start app");
+        //logview.setText("Start app");
         if (!btAdapter.isEnabled()) {
             Intent enableIntent = new Intent(BluetoothAdapter.ACTION_REQUEST_ENABLE);
             startActivityForResult(enableIntent, 1);
         }
-
     }
 
-    @SuppressLint("SetTextI18n")
-    public void connectToController(View view) {
+    public void connectToController(View view) throws IOException {
         String s = (String) logview.getText();
-        logview.setText( s + "\n List of devices");
-            fillList();
+        logview.setText( s + "\n Present list of available devices");
+        fillList();
     }
 
     public void fillList(){
@@ -101,52 +106,80 @@ public class MainActivity extends AppCompatActivity {
                     String  itemValue = (String) listDevice.getItemAtPosition(position);
                     String MAC = itemValue.substring(itemValue.length() - 17); // Вычленяем MAC-адрес
                     BluetoothDevice device2 = btAdapter.getRemoteDevice(MAC);
+
                     String tmp = (String) logview.getText();
-                    logview.setText(tmp + MAC);
-                    myThreadConnectBTdevice = new BTFanConnection(device2);
+                    logview.setText(tmp + "\n Connect to: " + MAC);
+
+                    btAdapter.cancelDiscovery();
+                    BTFanConnection myThreadConnectBTdevice = new BTFanConnection(device2);
                     myThreadConnectBTdevice.start();  // Запускаем поток для подключения Bluetooth
                 }
             });
         }
     }
 
-    public void sendToStartFan(View view) {
+    public void sendToStartFan(View view) throws IOException {
         String tmp = (String) inputtext.getText();
-        inputtext.setText(tmp + "\n test scroll");
+        inputtext.setText(tmp + "\n test scroll 1233");
+
+        //btManager = (BluetoothManager) getSystemService(Context.BLUETOOTH_SERVICE);
+        //ConnectToController connection = new ConnectToController(btManager);
+        //connection.start();
+
     }
 
     class BTFanConnection extends Thread{
-        private BluetoothSocket btSocket = null;
-        BluetoothDevice remoteDevice;
+        BluetoothSocket btSocket = null;
+        BluetoothDevice btDevice = null;
 
         public BTFanConnection(BluetoothDevice device) {
-            remoteDevice = device;
-            try {
-                btSocket = remoteDevice.createRfcommSocketToServiceRecord(myUUID);
-            } catch (IOException e) {
-                //logview.setText(logview.getText() + "\n Не удалось создать сокет");
-                e.printStackTrace();
-            }
+            btDevice = device;
         }
-        @SuppressLint("SetTextI18n")
         @Override
         public void run() {
             super.run();
             boolean success = false;
-            try {
+                UUID uuid = UUID.fromString("00001101-0000-1000-8000-00805F9B34FB");
+                try {
+                    btSocket = btDevice.createRfcommSocketToServiceRecord(uuid);
+                } catch (IOException e) {
+                    e.printStackTrace();
+                }
+                //logview.setText(logview.getText() + "\nСокет создан...");
+            try{
                 btSocket.connect();
                 success = true;
+                //logview.setText(logview.getText() + "\nСоединение установлено");
             } catch (IOException e) {
-                //String tmp = (String) logview.getText();
-                //logview.setText(tmp + "\n Socket создан, не удалось подключиться");
-                e.printStackTrace();
+                Log.e("===========",e.getMessage());
+                try {
+                    Log.e("","trying fallback...");
+
+                    try {
+                        btSocket =(BluetoothSocket) btDevice.getClass().getMethod("createRfcommSocket", new Class[] {int.class}).invoke(btDevice,1);
+                    } catch (NoSuchMethodException ex) {
+                        ex.printStackTrace();
+                    } catch (InvocationTargetException ex) {
+                        ex.printStackTrace();
+                    } catch (IllegalAccessException ex) {
+                        ex.printStackTrace();
+                    }
+                    btSocket.connect();
+                    success = true;
+                    Log.e("===========","Connected");
+                } catch (IOException ex) {
+                    ex.printStackTrace();
+                    try {
+                        btSocket.close();
+                    } catch (IOException ex1) {
+                        ex1.printStackTrace();
+                    }
+                }
             }
             if (success){
-                //String tmp = (String) logview.getText();
-                //logview.setText(tmp + "\n Подключение успешно, создаем поток I/O");
-                //Thread read
+                //logview.setText(logview.getText() + "\nПодключение успешно, создаем поток I/O");
                 myThreadIOdata = new ThreadIOdata(btSocket);
-                myThreadIOdata.run();
+                myThreadIOdata.start();
             }
         }
     }
@@ -157,17 +190,20 @@ public class MainActivity extends AppCompatActivity {
         private final OutputStream connectedOutputStream;
         private String sbprint;
 
-        @SuppressLint("SetTextI18n")
         public ThreadIOdata(BluetoothSocket btSocket) {
             InputStream in = null;
             OutputStream out = null;
             try {
                 in = btSocket.getInputStream();
                 out = btSocket.getOutputStream();
+                //logview.setText(logview.getText() + "\nОткрыты потоки I/O");
             } catch (IOException e) {
-                //String tmp = (String) logview.getText();
-                //logview.setText(tmp + "\n Подключение успешно, создаем поток I/O");
                 e.printStackTrace();
+                try {
+                    btSocket.close();
+                } catch (IOException ex) {
+                    ex.printStackTrace();
+                }
             }
             connectedInputStream = in;
             connectedOutputStream = out;
@@ -177,6 +213,7 @@ public class MainActivity extends AppCompatActivity {
         @Override
         public void run() {
             super.run();
+            //inputtext.setText("Читаем в потоке I/O ");
             while (true) {
                 try {
                     byte[] buffer = new byte[1];
@@ -186,9 +223,9 @@ public class MainActivity extends AppCompatActivity {
                     int endOfLineIndex = sb.indexOf("\r\n"); // определяем конец строки
                     if (endOfLineIndex > 0) {
                         sbprint = sb.substring(0, endOfLineIndex);
-                        sb.delete(0, sb.length());
-                        String tmp = (String) inputtext.getText();
-                        inputtext.setText(tmp + "\n" + sbprint);
+                        //sb.delete(0, sb.length());
+                        //inputtext.setText(inputtext.getText() + "\n" + sbprint);
+                        inputMSGhandler.obtainMessage(1,sbprint).sendToTarget();
                     }
                 } catch (IOException e) {
                     break;
