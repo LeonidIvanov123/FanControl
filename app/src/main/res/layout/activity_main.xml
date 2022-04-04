@@ -68,11 +68,32 @@
                         android:id="@+id/textfromfancontrol"
                         android:layout_weight="1"/>
             </ScrollView>
-            <Button
-                    android:text="Start Fan"
-                    android:layout_width="wrap_content"
-                    android:layout_height="wrap_content" android:id="@+id/button" android:layout_weight="1"
-                    android:onClick="sendToStartFan"/>
+            <LinearLayout
+                    android:orientation="vertical"
+                    android:layout_width="match_parent"
+                    android:layout_height="200dp">
+                <Button
+                        android:text="Connect to Fan controller"
+                        android:layout_width="match_parent"
+                        android:layout_height="12dp" android:id="@+id/connectFan" android:layout_weight="1"
+                        android:onClick="connectToFan"/>
+                <Button
+                        android:text="Clear data display"
+                        android:layout_width="match_parent"
+                        android:layout_height="12dp" android:id="@+id/clearDatalog" android:layout_weight="1"
+                        android:onClick="clearDataDisplay"/>
+                <Button
+                        android:text="Start FAN"
+                        android:layout_width="match_parent"
+                        android:layout_height="12dp" android:id="@+id/button3" android:layout_weight="1"
+                        android:onClick="sendToStartFan" android:enabled="false"/>
+                <ProgressBar
+                        style="?android:attr/progressBarStyle"
+                        android:layout_width="match_parent"
+                        android:layout_height="wrap_content"
+                        android:visibility="invisible"
+                        android:id="@+id/statusFan" android:layout_weight="1"/>
+            </LinearLayout>
         </LinearLayout>
 
     </LinearLayout>

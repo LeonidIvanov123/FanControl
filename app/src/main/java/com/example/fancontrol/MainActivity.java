@@ -25,13 +25,13 @@ import java.util.UUID;
 
 public class MainActivity extends AppCompatActivity {
 
-    Button bconnect;
+    Button bconnect, connectToFan;
     TextView logview, inputtext;
     ListView listDevice;
+    ProgressBar statusFan;
     BluetoothManager btManager;
     BluetoothAdapter btAdapter;
     Thread myThreadIOdata;
-    UUID myUUID = UUID.fromString("00001101-0000-1000-8000-00805F9B34FB");
     StringBuilder sb = new StringBuilder();
     Handler inputMSGhandler;
 
@@ -45,9 +45,11 @@ public class MainActivity extends AppCompatActivity {
         super.onCreate(savedInstanceState);
         setContentView(R.layout.activity_main);
         bconnect = (Button) findViewById(R.id.buttonconnect);
+        connectToFan = (Button) findViewById(R.id.connectFan);
         logview = (TextView) findViewById(R.id.loggingview);
         listDevice = (ListView) findViewById(R.id.listdevice);
         inputtext = (TextView) findViewById(R.id.textfromfancontrol);
+        statusFan = (ProgressBar) findViewById(R.id.statusFan);
 
         if (!getPackageManager().hasSystemFeature(PackageManager.FEATURE_BLUETOOTH)) {
             Toast.makeText(this, "You device BLUETOOTH not support", Toast.LENGTH_LONG).show();
@@ -57,7 +59,6 @@ public class MainActivity extends AppCompatActivity {
 
         btManager = (BluetoothManager) getSystemService(Context.BLUETOOTH_SERVICE);
         btAdapter = btManager.getAdapter();
-        //myUUID = UUID.fromString("00001101-0000-1000-8000-00805F9B34FB");
         if (btAdapter == null) {
             Toast.makeText(this, "Bluetooth is not supported on this hardware platform", Toast.LENGTH_LONG).show();
             finish();
@@ -67,23 +68,54 @@ public class MainActivity extends AppCompatActivity {
         logview.setText(String.format("Это устройство:\n %s", stInfo));
 
         inputMSGhandler = new Handler(){
+            int i = 0;
+            @SuppressLint("SetTextI18n")
             public void handleMessage(android.os.Message msg) {
-                inputtext.setText(inputtext.getText() + "\n" + msg.obj.toString());
+                String temp = (String) inputtext.getText();
+                inputtext.setText(msg.obj.toString() + " ==== line = " + i + "\n" + temp);
+                i = i+1;
+                //Индикация состояния Fan
+                if((msg.obj.toString()).contains("state fan = ")) {
+                    if (checkStatusFan(msg.obj.toString())) {
+                        statusFan.setVisibility(ProgressBar.VISIBLE);
+                        String tmp = (String) inputtext.getText();
+                        //inputtext.setText("FAN IS START\n" + tmp);
+                    }
+                    else {
+                        statusFan.setVisibility(ProgressBar.INVISIBLE);
+                        String tmp = (String) inputtext.getText();
+                        //inputtext.setText("FAN IS STOP\n" + tmp);
+                    }
+                }
+
             }
         };
+    }
 
+    boolean checkStatusFan(String data){
+            String tmp = data.substring(12);
+            //logview.setText(logview.getText() + "\n" + "data = "+ data + "\n tmp = " + tmp);
+            Integer i = 0;
+            try{
+                i = Integer.parseInt(tmp);
+            }
+            catch (NumberFormatException ex){
+                ex.printStackTrace();
+            }
+            if(i == 0)
+                return false;
+            else
+                return true;
     }
 
     @Override
     protected void onStart() {
         super.onStart();
-        //logview.setText("Start app");
         if (!btAdapter.isEnabled()) {
             Intent enableIntent = new Intent(BluetoothAdapter.ACTION_REQUEST_ENABLE);
             startActivityForResult(enableIntent, 1);
         }
     }
-
     public void connectToController(View view) throws IOException {
         String s = (String) logview.getText();
         logview.setText( s + "\n Present list of available devices");
@@ -103,13 +135,13 @@ public class MainActivity extends AppCompatActivity {
                 @Override
                 public void onItemClick(AdapterView< ?> parent, View view, int position, long id) { //тут пробел после скобки !!!!
                     //listDevice.setVisibility(View.GONE); // После клика скрываем список
+                    connectToFan.setEnabled(false);
                     String  itemValue = (String) listDevice.getItemAtPosition(position);
                     String MAC = itemValue.substring(itemValue.length() - 17); // Вычленяем MAC-адрес
                     BluetoothDevice device2 = btAdapter.getRemoteDevice(MAC);
 
                     String tmp = (String) logview.getText();
                     logview.setText(tmp + "\n Connect to: " + MAC);
-
                     btAdapter.cancelDiscovery();
                     BTFanConnection myThreadConnectBTdevice = new BTFanConnection(device2);
                     myThreadConnectBTdevice.start();  // Запускаем поток для подключения Bluetooth
@@ -122,10 +154,21 @@ public class MainActivity extends AppCompatActivity {
         String tmp = (String) inputtext.getText();
         inputtext.setText(tmp + "\n test scroll 1233");
 
-        //btManager = (BluetoothManager) getSystemService(Context.BLUETOOTH_SERVICE);
-        //ConnectToController connection = new ConnectToController(btManager);
-        //connection.start();
+    }
 
+    public void clearDataDisplay(View view) {
+        inputtext.setText("Input data from Fan controller\n");
+    }
+
+    public void connectToFan(View view) {
+        connectToFan.setClickable(false); //чтоб второй раз не подключиться
+        String MACcontroller = "98:D3:31:B0:81:7F";
+        BluetoothDevice device2 = btAdapter.getRemoteDevice(MACcontroller);
+        String tmp = (String) logview.getText();
+        logview.setText(tmp + "\n Connect to: " + MACcontroller);
+        btAdapter.cancelDiscovery();
+        BTFanConnection myThreadConnectBTdevice = new BTFanConnection(device2);
+        myThreadConnectBTdevice.start();  // Запускаем поток для подключения Bluetooth
     }
 
     class BTFanConnection extends Thread{
@@ -145,7 +188,6 @@ public class MainActivity extends AppCompatActivity {
                 } catch (IOException e) {
                     e.printStackTrace();
                 }
-                //logview.setText(logview.getText() + "\nСокет создан...");
             try{
                 btSocket.connect();
                 success = true;
@@ -166,7 +208,7 @@ public class MainActivity extends AppCompatActivity {
                     }
                     btSocket.connect();
                     success = true;
-                    Log.e("===========","Connected");
+                    Log.i("===========","Connected");
                 } catch (IOException ex) {
                     ex.printStackTrace();
                     try {
@@ -196,11 +238,11 @@ public class MainActivity extends AppCompatActivity {
             try {
                 in = btSocket.getInputStream();
                 out = btSocket.getOutputStream();
-                //logview.setText(logview.getText() + "\nОткрыты потоки I/O");
             } catch (IOException e) {
                 e.printStackTrace();
                 try {
                     btSocket.close();
+                    Log.e("======", "btSocket = close, error in open io stream");
                 } catch (IOException ex) {
                     ex.printStackTrace();
                 }
@@ -213,7 +255,7 @@ public class MainActivity extends AppCompatActivity {
         @Override
         public void run() {
             super.run();
-            //inputtext.setText("Читаем в потоке I/O ");
+
             while (true) {
                 try {
                     byte[] buffer = new byte[1];
@@ -223,11 +265,17 @@ public class MainActivity extends AppCompatActivity {
                     int endOfLineIndex = sb.indexOf("\r\n"); // определяем конец строки
                     if (endOfLineIndex > 0) {
                         sbprint = sb.substring(0, endOfLineIndex);
-                        //sb.delete(0, sb.length());
+                        sb.delete(0, sb.length());
                         //inputtext.setText(inputtext.getText() + "\n" + sbprint);
                         inputMSGhandler.obtainMessage(1,sbprint).sendToTarget();
                     }
                 } catch (IOException e) {
+                    try {
+                        connectedInputStream.close();
+                        connectedOutputStream.close();
+                    } catch (IOException ex) {
+                        ex.printStackTrace();
+                    }
                     break;
                 }
             }
