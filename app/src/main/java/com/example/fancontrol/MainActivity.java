@@ -184,6 +184,7 @@ public class MainActivity extends AppCompatActivity {
             boolean success = false;
                 UUID uuid = UUID.fromString("00001101-0000-1000-8000-00805F9B34FB");
                 try {
+                    //На моём Honor 50 ни разу не работает. Костыль ниже решает проблему(в оф. документации Андроид нет такого)
                     btSocket = btDevice.createRfcommSocketToServiceRecord(uuid);
                 } catch (IOException e) {
                     e.printStackTrace();

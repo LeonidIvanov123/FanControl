@@ -1,0 +1,54 @@
+////App for work work with BT module (for example HC-05)
+
+////My simple cod for Arduino with HC-05:
+
+int pinFan = 5;
+boolean stateFan = false;
+double curentTemp;
+int smartControl = 0;
+
+void setup() {
+  Serial.begin(9600);
+  pinMode(pinFan, OUTPUT);
+  pinMode(13, OUTPUT);
+  boolean led = false;
+}
+
+void loop() {
+  int sensorTemp = analogRead(A0);
+  curentTemp = (sensorTemp * (120.0 / 1023.0)); //текущая температура ОЖ
+  sendTempToSmart(curentTemp);
+  controlFan(curentTemp);
+  //smartControl = readDataFromSmart(); //тут аккуратнее
+    digitalWrite(13, HIGH);
+    delay(1500);
+    digitalWrite(13, LOW);
+    delay(1500);
+}
+
+void sendTempToSmart(double t){
+  Serial.print("temp = "); Serial.println(t);
+  Serial.print("state fan = "); Serial.println(stateFan);
+  }
+
+void controlFan(double t){
+  if(smartControl == 0){
+    if((t > 97.0) and (stateFan == false)){
+      stateFan = true;
+      digitalWrite(pinFan, HIGH);
+    }
+    if((t < 90.0) and (stateFan == true)){
+      stateFan = false;
+      digitalWrite(pinFan, LOW);
+    }
+  }else{
+    stateFan = true;
+    digitalWrite(pinFan, HIGH);
+  }
+}
+int readDataFromSmart(){
+  int d;
+  if(Serial.available())
+    d = Serial.read();
+  return d;
+}
