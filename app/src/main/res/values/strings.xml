@@ -1,3 +1,4 @@
 <resources>
     <string name="app_name">Fan Control</string>
+    <string name="activitySettingname">Settings</string>
 </resources>

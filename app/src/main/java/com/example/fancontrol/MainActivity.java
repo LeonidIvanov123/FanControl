@@ -34,6 +34,7 @@ public class MainActivity extends AppCompatActivity {
     Thread myThreadIOdata;
     StringBuilder sb = new StringBuilder();
     Handler inputMSGhandler;
+    String fileSettings = "settings.xml"; //файл с настройками приложения
 
     Set<BluetoothDevice> paredDev;
     ArrayList<String> pairedDeviceArrayList;
@@ -169,6 +170,13 @@ public class MainActivity extends AppCompatActivity {
         btAdapter.cancelDiscovery();
         BTFanConnection myThreadConnectBTdevice = new BTFanConnection(device2);
         myThreadConnectBTdevice.start();  // Запускаем поток для подключения Bluetooth
+    }
+
+    public void startSettingView(View view) {
+        Intent intent = new Intent(this, SettingActivity.class);
+        intent.putExtra("namefile", fileSettings);
+        startActivity(intent);
+
     }
 
     class BTFanConnection extends Thread{

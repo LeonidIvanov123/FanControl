@@ -71,12 +71,12 @@
             <LinearLayout
                     android:orientation="vertical"
                     android:layout_width="match_parent"
-                    android:layout_height="200dp">
+                    android:layout_height="300dp">
                 <Button
                         android:text="Connect to Fan controller"
                         android:layout_width="match_parent"
                         android:layout_height="12dp" android:id="@+id/connectFan" android:layout_weight="1"
-                        android:onClick="connectToFan"/>
+                        android:onClick="connectToFan" android:textSize="12sp"/>
                 <Button
                         android:text="Clear data display"
                         android:layout_width="match_parent"
@@ -85,12 +85,17 @@
                 <Button
                         android:text="Start FAN"
                         android:layout_width="match_parent"
-                        android:layout_height="12dp" android:id="@+id/button3" android:layout_weight="1"
+                        android:layout_height="1dp" android:id="@+id/button3" android:layout_weight="1"
                         android:onClick="sendToStartFan" android:enabled="false"/>
+                <Button
+                        android:text="Open settings"
+                        android:layout_width="match_parent"
+                        android:layout_height="2dp" android:id="@+id/buttonOpnSettingView" android:layout_weight="1"
+                        android:onClick="startSettingView"/>
                 <ProgressBar
                         style="?android:attr/progressBarStyle"
                         android:layout_width="match_parent"
-                        android:layout_height="wrap_content"
+                        android:layout_height="21dp"
                         android:visibility="invisible"
                         android:id="@+id/statusFan" android:layout_weight="1"/>
             </LinearLayout>
