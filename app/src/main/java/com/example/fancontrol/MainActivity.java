@@ -5,36 +5,40 @@ import android.bluetooth.*;
 import android.content.Context;
 import android.content.Intent;
 import android.content.pm.PackageManager;
-import android.os.Handler;
+import android.os.*;
 import android.text.method.ScrollingMovementMethod;
 import android.util.Log;
 import android.view.LayoutInflater;
 import android.view.View;
 import android.widget.*;
+import androidx.annotation.NonNull;
+import androidx.annotation.RequiresApi;
 import androidx.appcompat.app.AppCompatActivity;
-import android.os.Bundle;
 
-import java.io.IOException;
-import java.io.InputStream;
-import java.io.OutputStream;
+import java.io.*;
 import java.lang.reflect.InvocationTargetException;
-import java.util.ArrayList;
-import java.util.List;
-import java.util.Set;
-import java.util.UUID;
+import java.text.SimpleDateFormat;
+import java.util.*;
 
+@SuppressLint("SetTextI18n")
 public class MainActivity extends AppCompatActivity {
 
     Button bconnect, connectToFan;
     TextView logview, inputtext;
     ListView listDevice;
     ProgressBar statusFan;
+    Switch logSwitch;
+    volatile boolean writeLogfile = false;
+    String dataforLOG = ""; //надо бы синхронизировать запись в переменную и запись в файл
+    int forsedFan = 0; //принудительное включение Fan
+
+
     BluetoothManager btManager;
     BluetoothAdapter btAdapter;
     Thread myThreadIOdata;
-    StringBuilder sb = new StringBuilder();
     Handler inputMSGhandler;
     String fileSettings = "settings.xml"; //файл с настройками приложения
+
 
     Set<BluetoothDevice> paredDev;
     ArrayList<String> pairedDeviceArrayList;
@@ -51,6 +55,7 @@ public class MainActivity extends AppCompatActivity {
         listDevice = (ListView) findViewById(R.id.listdevice);
         inputtext = (TextView) findViewById(R.id.textfromfancontrol);
         statusFan = (ProgressBar) findViewById(R.id.statusFan);
+        logSwitch = (Switch) findViewById(R.id.writeLogFile);
 
         if (!getPackageManager().hasSystemFeature(PackageManager.FEATURE_BLUETOOTH)) {
             Toast.makeText(this, "You device BLUETOOTH not support", Toast.LENGTH_LONG).show();
@@ -70,22 +75,19 @@ public class MainActivity extends AppCompatActivity {
 
         inputMSGhandler = new Handler(){
             int i = 0;
-            @SuppressLint("SetTextI18n")
             public void handleMessage(android.os.Message msg) {
                 String temp = (String) inputtext.getText();
                 inputtext.setText(msg.obj.toString() + " ==== line = " + i + "\n" + temp);
                 i = i+1;
+                if(writeLogfile)
+                    dataforLOG = msg.obj.toString();
                 //Индикация состояния Fan
                 if((msg.obj.toString()).contains("state fan = ")) {
                     if (checkStatusFan(msg.obj.toString())) {
                         statusFan.setVisibility(ProgressBar.VISIBLE);
-                        String tmp = (String) inputtext.getText();
-                        //inputtext.setText("FAN IS START\n" + tmp);
                     }
                     else {
                         statusFan.setVisibility(ProgressBar.INVISIBLE);
-                        String tmp = (String) inputtext.getText();
-                        //inputtext.setText("FAN IS STOP\n" + tmp);
                     }
                 }
 
@@ -95,18 +97,14 @@ public class MainActivity extends AppCompatActivity {
 
     boolean checkStatusFan(String data){
             String tmp = data.substring(12);
-            //logview.setText(logview.getText() + "\n" + "data = "+ data + "\n tmp = " + tmp);
-            Integer i = 0;
+            int i = 0;
             try{
                 i = Integer.parseInt(tmp);
             }
             catch (NumberFormatException ex){
                 ex.printStackTrace();
             }
-            if(i == 0)
-                return false;
-            else
-                return true;
+        return i != 0;
     }
 
     @Override
@@ -117,6 +115,7 @@ public class MainActivity extends AppCompatActivity {
             startActivityForResult(enableIntent, 1);
         }
     }
+
     public void connectToController(View view) throws IOException {
         String s = (String) logview.getText();
         logview.setText( s + "\n Present list of available devices");
@@ -153,8 +152,14 @@ public class MainActivity extends AppCompatActivity {
 
     public void sendToStartFan(View view) throws IOException {
         String tmp = (String) inputtext.getText();
-        inputtext.setText(tmp + "\n test scroll 1233");
-
+        //State "forsedFan" check in I\O Thread
+        if(forsedFan == 0){
+            forsedFan = 1;
+            inputtext.setText(tmp + "\n принудительно forsedFan = " + forsedFan);
+        }else{
+            forsedFan = 0;
+            inputtext.setText(tmp + "\n принудительно forsedFan = " + forsedFan);
+        }
     }
 
     public void clearDataDisplay(View view) {
@@ -179,6 +184,20 @@ public class MainActivity extends AppCompatActivity {
 
     }
 
+    @SuppressLint("NewApi")
+    public void onCheckedLogSwitch(View view) {
+        WriteLogs writeLogs;
+        if(!writeLogfile){
+            writeLogfile = true;
+            logview.setText(logview.getText() + "\n Пишем логи в файл...");
+            writeLogs = new WriteLogs();
+            writeLogs.start();
+        }else{
+            writeLogfile = false;
+            logview.setText(logview.getText() + "\n Запись в файл остановлена.\nФайл сохранен в /Download/FanLOG/");
+        }
+    }
+
     class BTFanConnection extends Thread{
         BluetoothSocket btSocket = null;
         BluetoothDevice btDevice = null;
@@ -200,12 +219,10 @@ public class MainActivity extends AppCompatActivity {
             try{
                 btSocket.connect();
                 success = true;
-                //logview.setText(logview.getText() + "\nСоединение установлено");
             } catch (IOException e) {
-                Log.e("===========",e.getMessage());
+                Log.e("BTFanConnection_log",e.getMessage());
                 try {
-                    Log.e("","trying fallback...");
-
+                    Log.e("BTFanConnection_log","trying fallback...");
                     try {
                         btSocket =(BluetoothSocket) btDevice.getClass().getMethod("createRfcommSocket", new Class[] {int.class}).invoke(btDevice,1);
                     } catch (NoSuchMethodException ex) {
@@ -217,7 +234,7 @@ public class MainActivity extends AppCompatActivity {
                     }
                     btSocket.connect();
                     success = true;
-                    Log.i("===========","Connected");
+                    Log.i("BTFanConnection_log","Connected");
                 } catch (IOException ex) {
                     ex.printStackTrace();
                     try {
@@ -228,7 +245,7 @@ public class MainActivity extends AppCompatActivity {
                 }
             }
             if (success){
-                //logview.setText(logview.getText() + "\nПодключение успешно, создаем поток I/O");
+                Log.i("BTFanConnection_log","Create thread IO");
                 myThreadIOdata = new ThreadIOdata(btSocket);
                 myThreadIOdata.start();
             }
@@ -240,6 +257,7 @@ public class MainActivity extends AppCompatActivity {
         private final InputStream connectedInputStream;
         private final OutputStream connectedOutputStream;
         private String sbprint;
+        private StringBuilder sb;
 
         public ThreadIOdata(BluetoothSocket btSocket) {
             InputStream in = null;
@@ -251,22 +269,31 @@ public class MainActivity extends AppCompatActivity {
                 e.printStackTrace();
                 try {
                     btSocket.close();
-                    Log.e("======", "btSocket = close, error in open io stream");
+                    Log.e("ThreadIOdata_log", "btSocket = close, error in open io stream");
                 } catch (IOException ex) {
                     ex.printStackTrace();
                 }
             }
             connectedInputStream = in;
             connectedOutputStream = out;
+            sb = new StringBuilder();
         }
 
-        @SuppressLint("SetTextI18n")
+        private void sendData(int data){
+            try {
+                connectedOutputStream.write(data);
+            } catch (IOException e) {
+                e.printStackTrace();
+            }
+        }
+
         @Override
         public void run() {
             super.run();
 
             while (true) {
                 try {
+
                     byte[] buffer = new byte[1];
                     int bytes = connectedInputStream.read(buffer);
                     String strIncom = new String(buffer, 0, bytes);
@@ -275,9 +302,9 @@ public class MainActivity extends AppCompatActivity {
                     if (endOfLineIndex > 0) {
                         sbprint = sb.substring(0, endOfLineIndex);
                         sb.delete(0, sb.length());
-                        //inputtext.setText(inputtext.getText() + "\n" + sbprint);
                         inputMSGhandler.obtainMessage(1,sbprint).sendToTarget();
                     }
+                    //if(forsedFan) //надо отрабатывать только по изменению
                 } catch (IOException e) {
                     try {
                         connectedInputStream.close();
@@ -289,5 +316,57 @@ public class MainActivity extends AppCompatActivity {
                 }
             }
         }
+    }
+
+    private class WriteLogs extends Thread{
+        /*пишем логи в файл. запускаем и стопим по чекбоксу на главном экране(чекбокс доступен после успешного соединения).
+        файл называем Log+текущая дата.время
+        Handler получает данные из потока ThreadIOdata
+        */
+        private String filename;
+        private File logfile;
+        private FileWriter fileWriter;
+
+        @RequiresApi(api = Build.VERSION_CODES.R)
+        public WriteLogs() {
+            @SuppressLint("SimpleDateFormat")
+            String thetime = new SimpleDateFormat("yyyyMMdd_HHmm").format(Calendar.getInstance().getTime());
+            //filename = Environment.getStorageDirectory()
+            filename = "/storage/emulated/0/Download/FanLOG/Log_" + thetime;
+            logfile = new File(filename);
+
+            try {
+                if(!logfile.exists())
+                    logfile.createNewFile();
+                fileWriter = new FileWriter(logfile);
+                fileWriter.append(thetime + "\n");
+            } catch (IOException e) {
+                e.printStackTrace();
+            }
+        }
+
+        @Override
+        protected void finalize() throws Throwable {
+            super.finalize();
+            fileWriter.close();
+        }
+
+        @SuppressLint("HandlerLeak")
+        @Override
+        public void run() {
+            super.run();
+            while(writeLogfile){
+                if(!dataforLOG.equals("")){
+                    try {
+                        fileWriter.append(dataforLOG).append("\n");
+                    } catch (IOException e) {
+                        e.printStackTrace();
+                    }
+                }
+            }
+        }
+
+
+
     }
 }

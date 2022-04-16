@@ -92,6 +92,11 @@
                         android:layout_width="match_parent"
                         android:layout_height="2dp" android:id="@+id/buttonOpnSettingView" android:layout_weight="1"
                         android:onClick="startSettingView"/>
+                <Switch
+                        android:text="Write Logfile"
+                        android:layout_width="match_parent"
+                        android:layout_height="wrap_content" android:id="@+id/writeLogFile" android:layout_weight="1"
+                        android:onClick="onCheckedLogSwitch"/>
                 <ProgressBar
                         style="?android:attr/progressBarStyle"
                         android:layout_width="match_parent"
