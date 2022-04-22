@@ -213,15 +213,15 @@ public class MainActivity extends AppCompatActivity {
         }else {
             writeLogfile = false;
             try {
-                pipedWriterLOG.write("stop\n");
+                pipedWriterLOG.close(); //вызывает исключение в DataLogging. finalize закрывает файл.
             } catch (IOException e) {
                 e.printStackTrace();
             }
+            dataLogging.shutDown();
             Log.i("DataLogging", "interrapt thread DataLogging from main class");
 
             logview.setText(logview.getText() + "\n Запись в файл остановлена.\nФайл сохранен в /Download/FanLOG/");
         }
-        //DataLogging dataLogg = new DataLogging()
 
         /*
         WriteLogs writeLogs;

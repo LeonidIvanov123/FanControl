@@ -12,6 +12,7 @@ public class DataLogging implements Runnable{
     private File logfile;
     private String filename;
     private FileWriter fileWriter;
+    private volatile boolean shutdown = false;
 
     public DataLogging(PipedWriter writer) {
         this.writer = writer;
@@ -38,7 +39,7 @@ public class DataLogging implements Runnable{
 
     @Override
     public void run() {
-        while (true){
+        while (!shutdown){
             try {
                 String tmp = "";
                 char c;
@@ -46,21 +47,28 @@ public class DataLogging implements Runnable{
                 while((c = (char)reader.read())!= '\n'){ //блокирующая операция. ждет новых данных. Пишем по строкам
                     tmp = tmp + c;
                 }
-                Log.i("DataLogging", "str tmp = " + tmp);
-                if(tmp.equals("stop")){
-                    Log.i("DataLogging", "finnalize");
-                    try {
-                        finalize();
-                        break;
-                    } catch (Throwable e) {
-                        e.printStackTrace();
-                    }
-                }
                 fileWriter.write(tmp + "\n");
             } catch (IOException e1) {
                 e1.printStackTrace();
+                Log.i("DataLogging","IOException e1");
             }
         }
+
+    }
+
+    public void shutDown(){
+        Log.i("DataLogging","called shutDown");
+        shutdown = true;
+        try {
+            reader.close();
+        } catch (IOException e) {
+            e.printStackTrace();
+        }
+        try {
+                finalize();
+            } catch (Throwable e) {
+                e.printStackTrace();
+            }
     }
 
     @Override
