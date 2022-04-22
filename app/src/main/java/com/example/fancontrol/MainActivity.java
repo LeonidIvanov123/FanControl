@@ -31,6 +31,8 @@ public class MainActivity extends AppCompatActivity {
     volatile boolean writeLogfile = false;
     String dataforLOG = ""; //надо бы синхронизировать запись в переменную и запись в файл
     int forsedFan = 0; //принудительное включение Fan
+    PipedWriter pipedWriterLOG;
+    DataLogging dataLogging;
 
 
     BluetoothManager btManager;
@@ -79,8 +81,14 @@ public class MainActivity extends AppCompatActivity {
                 String temp = (String) inputtext.getText();
                 inputtext.setText(msg.obj.toString() + " ==== line = " + i + "\n" + temp);
                 i = i+1;
-                if(writeLogfile)
-                    dataforLOG = msg.obj.toString();
+                if(writeLogfile) {
+                    dataforLOG = msg.obj.toString(); //по старой логике для работы с внутренним классом
+                    try {
+                        pipedWriterLOG.write(dataforLOG);
+                    } catch (IOException e) {
+                        e.printStackTrace();
+                    }
+                }
                 //Индикация состояния Fan
                 if((msg.obj.toString()).contains("state fan = ")) {
                     if (checkStatusFan(msg.obj.toString())) {
@@ -186,6 +194,36 @@ public class MainActivity extends AppCompatActivity {
 
     @SuppressLint("NewApi")
     public void onCheckedLogSwitch(View view) {
+        //логика в Handler'e
+        Thread t = null;
+        if(!writeLogfile){
+            writeLogfile = true;
+            pipedWriterLOG = new PipedWriter();
+            dataLogging = new DataLogging(pipedWriterLOG);
+            t = new Thread(dataLogging);
+            t.start();
+            Log.i("DataLogging", "start DataLogging from main class");
+            logview.setText(logview.getText() + "\n Пишем логи в файл...");
+
+            try {
+                pipedWriterLOG.write("privet медвед \n"); //test message
+            } catch (IOException e) {
+                e.printStackTrace();
+            }
+        }else {
+            writeLogfile = false;
+            try {
+                pipedWriterLOG.write("stop\n");
+            } catch (IOException e) {
+                e.printStackTrace();
+            }
+            Log.i("DataLogging", "interrapt thread DataLogging from main class");
+
+            logview.setText(logview.getText() + "\n Запись в файл остановлена.\nФайл сохранен в /Download/FanLOG/");
+        }
+        //DataLogging dataLogg = new DataLogging()
+
+        /*
         WriteLogs writeLogs;
         if(!writeLogfile){
             writeLogfile = true;
@@ -195,7 +233,7 @@ public class MainActivity extends AppCompatActivity {
         }else{
             writeLogfile = false;
             logview.setText(logview.getText() + "\n Запись в файл остановлена.\nФайл сохранен в /Download/FanLOG/");
-        }
+        } */
     }
 
     class BTFanConnection extends Thread{
@@ -318,6 +356,7 @@ public class MainActivity extends AppCompatActivity {
         }
     }
 
+    //вынесен в DataLogging
     private class WriteLogs extends Thread{
         /*пишем логи в файл. запускаем и стопим по чекбоксу на главном экране(чекбокс доступен после успешного соединения).
         файл называем Log+текущая дата.время
