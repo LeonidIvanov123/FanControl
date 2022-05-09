@@ -39,7 +39,7 @@ public class MainActivity extends AppCompatActivity {
     BluetoothAdapter btAdapter;
     Thread myThreadIOdata;
     Handler inputMSGhandler;
-    String fileSettings = "settings.xml"; //файл с настройками приложения
+    String fileSettings = "/storage/emulated/0/Download/FanLOG/settings.xml"; //файл с настройками приложения
 
 
     Set<BluetoothDevice> paredDev;
