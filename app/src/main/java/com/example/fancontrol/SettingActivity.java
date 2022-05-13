@@ -35,10 +35,7 @@ public class SettingActivity extends AppCompatActivity {
     protected void onCreate(@Nullable Bundle savedInstanceState) {
         super.onCreate(savedInstanceState);
         setContentView(R.layout.activity_settings);
-     /*   if (savedInstanceState == null) {
-            getSupportFragmentManager().beginTransaction().add(R.id.container, new PlaceholderFragment()).commit();
-        }
-      */
+
         tact = (EditText) findViewById(R.id.tactivation);
         tdeact = (EditText) findViewById(R.id.tdeactivation);
         saveset = (Button) findViewById(R.id.savesettings);
@@ -54,10 +51,13 @@ public class SettingActivity extends AppCompatActivity {
             try {
                 FileReader fr = new FileReader(fileSettings);
                 BufferedReader br = new BufferedReader(fr);
-                String tmp = br.readLine();
-                tact.setText(tmp);
-                tmp = br.readLine();
-                tdeact.setText(tmp);
+
+                //String tmp = br.readLine();
+                int tmp = br.read();
+                tact.setText(tmp + "");
+                tmp = br.read();
+                tdeact.setText(tmp + "");
+                logdata.setText("tdeact = " + tmp);
             } catch (FileNotFoundException e) {
                 e.printStackTrace();
             } catch (IOException e) {
@@ -89,7 +89,7 @@ public class SettingActivity extends AppCompatActivity {
         try {
             BufferedWriter bw = new BufferedWriter(new FileWriter(fileSettings));
             bw.write(ta);
-            bw.write("\n");
+            //bw.write("\n");
             bw.write(tde);
             bw.close();
         } catch (IOException e) {
