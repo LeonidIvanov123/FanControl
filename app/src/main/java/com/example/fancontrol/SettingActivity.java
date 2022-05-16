@@ -73,6 +73,11 @@ public class SettingActivity extends AppCompatActivity {
         super.onStart();
     }
 
+    @Override
+    protected void onStop() {
+        super.onStop();
+    }
+
     @SuppressLint("ResourceType")
     public void savesetting(View view) {
         int ta = Integer.parseInt(String.valueOf(tact.getText()));
@@ -95,7 +100,6 @@ public class SettingActivity extends AppCompatActivity {
         } catch (IOException e) {
             e.printStackTrace();
         }
-
 
     }
 
