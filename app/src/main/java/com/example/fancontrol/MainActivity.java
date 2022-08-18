@@ -6,15 +6,11 @@ import android.content.Context;
 import android.content.Intent;
 import android.content.pm.PackageManager;
 import android.os.*;
-import android.text.method.ScrollingMovementMethod;
 import android.util.Log;
-import android.view.LayoutInflater;
 import android.view.View;
 import android.widget.*;
-import androidx.annotation.NonNull;
 import androidx.annotation.RequiresApi;
 import androidx.appcompat.app.AppCompatActivity;
-
 import java.io.*;
 import java.lang.reflect.InvocationTargetException;
 import java.text.SimpleDateFormat;
@@ -124,7 +120,7 @@ public class MainActivity extends AppCompatActivity {
         }
     }
 
-    public void connectToController(View view) throws IOException {
+    public void connectToController(View view){
         String s = (String) logview.getText();
         logview.setText( s + "\n Present list of available devices");
         fillList();
@@ -158,7 +154,7 @@ public class MainActivity extends AppCompatActivity {
         }
     }
 
-    public void sendToStartFan(View view) throws IOException {
+    public void sendToStartFan(View view){
         String tmp = (String) inputtext.getText();
         //State "forsedFan" check in I\O Thread
         if(forsedFan == 0){
@@ -195,7 +191,7 @@ public class MainActivity extends AppCompatActivity {
     @SuppressLint("NewApi")
     public void onCheckedLogSwitch(View view) {
         //логика в Handler'e
-        Thread t = null;
+        Thread t;
         if(!writeLogfile){
             writeLogfile = true;
             pipedWriterLOG = new PipedWriter();
@@ -222,18 +218,6 @@ public class MainActivity extends AppCompatActivity {
 
             logview.setText(logview.getText() + "\n Запись в файл остановлена.\nФайл сохранен в /Download/FanLOG/");
         }
-
-        /*
-        WriteLogs writeLogs;
-        if(!writeLogfile){
-            writeLogfile = true;
-            logview.setText(logview.getText() + "\n Пишем логи в файл...");
-            writeLogs = new WriteLogs();
-            writeLogs.start();
-        }else{
-            writeLogfile = false;
-            logview.setText(logview.getText() + "\n Запись в файл остановлена.\nФайл сохранен в /Download/FanLOG/");
-        } */
     }
 
     class BTFanConnection extends Thread{
@@ -263,6 +247,7 @@ public class MainActivity extends AppCompatActivity {
                     Log.e("BTFanConnection_log","trying fallback...");
                     try {
                         btSocket =(BluetoothSocket) btDevice.getClass().getMethod("createRfcommSocket", new Class[] {int.class}).invoke(btDevice,1);
+
                     } catch (NoSuchMethodException ex) {
                         ex.printStackTrace();
                     } catch (InvocationTargetException ex) {
@@ -331,7 +316,6 @@ public class MainActivity extends AppCompatActivity {
 
             while (true) {
                 try {
-
                     byte[] buffer = new byte[1];
                     int bytes = connectedInputStream.read(buffer);
                     String strIncom = new String(buffer, 0, bytes);
@@ -373,7 +357,6 @@ public class MainActivity extends AppCompatActivity {
             //filename = Environment.getStorageDirectory()
             filename = "/storage/emulated/0/Download/FanLOG/Log_" + thetime;
             logfile = new File(filename);
-
             try {
                 if(!logfile.exists())
                     logfile.createNewFile();
