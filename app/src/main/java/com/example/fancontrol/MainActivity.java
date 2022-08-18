@@ -4,6 +4,7 @@ import android.annotation.SuppressLint;
 import android.bluetooth.*;
 import android.content.Context;
 import android.content.Intent;
+import android.content.pm.FeatureGroupInfo;
 import android.content.pm.PackageManager;
 import android.os.*;
 import android.util.Log;
@@ -15,6 +16,7 @@ import java.io.*;
 import java.lang.reflect.InvocationTargetException;
 import java.text.SimpleDateFormat;
 import java.util.*;
+import java.util.concurrent.Callable;
 
 @SuppressLint("SetTextI18n")
 public class MainActivity extends AppCompatActivity {
@@ -97,6 +99,24 @@ public class MainActivity extends AppCompatActivity {
 
             }
         };
+    }
+
+    @Override
+    protected void onResume() {
+        super.onResume();
+        //возврат из SettingActivity, обработать изменения
+        logview.setText((String) logview.getText() + '\n' + "Возврат к MainActivity");
+
+        Callable<String> getdatafromsettingfile = () ->{
+            File f = new File(fileSettings);
+            if(!f.exists())
+                return "file not exist";
+            BufferedReader bf = new BufferedReader(new FileReader(f));
+            String tmp = bf.toString();
+            return tmp;
+        };
+        //feature
+        //new Thread((Runnable) getdatafromsettingfile).start();
     }
 
     boolean checkStatusFan(String data){

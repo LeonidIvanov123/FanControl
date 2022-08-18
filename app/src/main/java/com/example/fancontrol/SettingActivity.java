@@ -51,6 +51,8 @@ public class SettingActivity extends AppCompatActivity {
             try {
                 FileReader fr = new FileReader(fileSettings);
                 BufferedReader br = new BufferedReader(fr);
+
+                //String tmp = br.readLine();
                 int tmp = br.read();
                 tact.setText(tmp + "");
                 tmp = br.read();
@@ -93,6 +95,8 @@ public class SettingActivity extends AppCompatActivity {
         } catch (IOException e) {
             e.printStackTrace();
         }
+
+
     }
 
     public static class PlaceholderFragment extends Fragment {
@@ -104,4 +108,5 @@ public class SettingActivity extends AppCompatActivity {
             return rootView;
         }
     }
+
 }
