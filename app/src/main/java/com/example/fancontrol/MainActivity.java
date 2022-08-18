@@ -27,7 +27,7 @@ public class MainActivity extends AppCompatActivity {
     ProgressBar statusFan;
     Switch logSwitch;
     volatile boolean writeLogfile = false;
-    String dataforLOG = ""; //надо бы синхронизировать запись в переменную и запись в файл
+    String dataforLOG = "";
     int forsedFan = 0; //принудительное включение Fan
     PipedWriter pipedWriterLOG;
     DataLogging dataLogging;
